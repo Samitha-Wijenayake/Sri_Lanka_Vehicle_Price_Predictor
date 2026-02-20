@@ -19,13 +19,14 @@ def train_and_evaluate(input_file):
     import json
     mappings = {}
     
-    # 1. Brand Mapping
+    # 1. Brand and Model Mapping
     if 'Brand' in df.columns and 'Brand_Encoded' in df.columns:
-        # Create dictionary: {"Toyota": 1, "Honda": 2, ...}
-        # Use simple aggregation to get unique pairs
         brand_map = df[['Brand', 'Brand_Encoded']].drop_duplicates().set_index('Brand')['Brand_Encoded'].to_dict()
-        # Convert int64 to int for JSON serialization
-        mappings['Brand'] = {k: int(v) for k, v in brand_map.items()}
+        mappings['Brand'] = {str(k): int(v) for k, v in brand_map.items()}
+        
+    if 'Model' in df.columns and 'Model_Encoded' in df.columns:
+        model_map = df[['Model', 'Model_Encoded']].drop_duplicates().set_index('Model')['Model_Encoded'].to_dict()
+        mappings['Model'] = {str(k): int(v) for k, v in model_map.items()}
     
     # 2. Location Columns
     # Identify Loc_* columns
@@ -48,7 +49,7 @@ def train_and_evaluate(input_file):
     # We KEEP: Mileage, Year, Brand_Encoded, and Loc_* columns
     
     # Drop known non-feature columns
-    drop_cols = ['Title', 'Price', 'Brand', 'Location', 'Location_Clean', 'Price_Normalized', 'Mileage_Normalized', 'Description', 'PublishedDate', 'Link', 'ImageURL']
+    drop_cols = ['Title', 'Price', 'Brand', 'Model', 'Location', 'Location_Clean', 'Price_Normalized', 'Mileage_Normalized', 'Description', 'PublishedDate', 'Link', 'ImageURL']
     if 'Unnamed: 0' in df.columns:
         drop_cols.append('Unnamed: 0')
         

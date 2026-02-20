@@ -74,10 +74,15 @@ MODEL_PATH = os.path.join(OUTPUTS_DIR, 'model.json')
 MAPPINGS_PATH = os.path.join(OUTPUTS_DIR, 'mappings.json')
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner="Loading XGBoost Model...")
 def load_model():
+    model_path = os.path.join(OUTPUTS_DIR, 'model.json')
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+    
+    # Invalidate cache trick
     model = xgb.XGBRegressor()
-    model.load_model(MODEL_PATH)
+    model.load_model(model_path)
     return model
 
 @st.cache_data
@@ -86,15 +91,26 @@ def load_mappings():
         mappings = json.load(f)
     return mappings
 
+@st.cache_data
+def load_brand_models():
+    # Load mapping of which brand owns which models
+    path = os.path.join(OUTPUTS_DIR, 'brand_models.json')
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {}
+
 try:
     model = load_model()
     mappings = load_mappings()
+    brand_models = load_brand_models()
 except Exception as e:
     st.error(f"⚠️ Error loading model or mappings: {e}")
     st.info("Please make sure the model has been trained and outputs/model.json exists.")
     st.stop()
     
 brand_mapping = mappings.get('Brand', {})
+model_mapping = mappings.get('Model', {})
 location_cols = mappings.get('Location_Columns', [])
 
 # Extract valid locations for the UI by removing 'Loc_' prefix
@@ -123,6 +139,15 @@ with main_col:
             default_brand_idx = brand_options.index("Toyota") if "Toyota" in brand_options else 0
             selected_brand = st.selectbox("Vehicle Brand", options=brand_options, index=default_brand_idx)
             
+            # Extract models dynamically
+            available_models = brand_models.get(selected_brand, [])
+            if not available_models:
+                # Fallback if no specific models found for brand
+                available_models = ["Unknown"]
+                
+            model_options = sorted(available_models)
+            selected_model = st.selectbox("Vehicle Model", options=model_options)
+            
             selected_location = st.selectbox("Registered Location", options=valid_locations)
             
         with c2:
@@ -138,6 +163,7 @@ if predict_btn:
     with st.spinner("Analyzing current market trends..."):
         # Features mapping
         brand_encoded = brand_mapping.get(selected_brand, 0)
+        model_encoded = model_mapping.get(selected_model, 0)
         
         loc_features = {}
         for col in location_cols:
@@ -153,7 +179,8 @@ if predict_btn:
         input_data = {
             'Mileage': [selected_mileage],
             'Year': [selected_year],
-            'Brand_Encoded': [brand_encoded]
+            'Brand_Encoded': [brand_encoded],
+            'Model_Encoded': [model_encoded]
         }
         for col in location_cols:
             input_data[col] = [loc_features[col]]
@@ -174,13 +201,13 @@ if predict_btn:
                 <div class="prediction-box">
                     <div style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 5px;">Estimated Market Value</div>
                     <div class="price-value">{formatted_price}</div>
-                    <div style="font-size: 0.95rem; opacity: 0.9;">For a {selected_year} {selected_brand} with {selected_mileage:,} km</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9;">For a {selected_year} {selected_brand} {selected_model} with {selected_mileage:,} km</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 # Simple explainability
                 st.markdown("---")
-                st.markdown(f"**💡 Insight:** Values are primarily driven by **Year ({selected_year})** and **Mileage**, alongside Sri Lanka's dynamic market conditions for **{selected_brand}** vehicles.")
+                st.markdown(f"**💡 Insight:** Values are primarily driven by **Year ({selected_year})** and **Mileage**, alongside Sri Lanka's dynamic market conditions for **{selected_brand} {selected_model}** vehicles.")
 
         except Exception as e:
             st.error(f"Prediction calculation failed: {e}")

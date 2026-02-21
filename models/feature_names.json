@@ -1,0 +1,24 @@
+{
+    "features": [
+        "Mileage",
+        "Location",
+        "Year",
+        "Brand",
+        "Model",
+        "Brand_Encoded",
+        "Model_Encoded",
+        "Loc_Anuradhapura",
+        "Loc_Colombo",
+        "Loc_Galle",
+        "Loc_Gampaha",
+        "Loc_Jaffna",
+        "Loc_Kalutara",
+        "Loc_Kandy",
+        "Loc_Kegalle",
+        "Loc_Kurunegala",
+        "Loc_Other",
+        "Loc_Trincomalee",
+        "Price_Normalized",
+        "Mileage_Normalized"
+    ]
+}

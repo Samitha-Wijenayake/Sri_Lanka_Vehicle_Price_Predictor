@@ -95,9 +95,3 @@ Start the Streamlit application to display the interactive UI. The app takes use
 streamlit run app/streamlit_app.py
 ```
 
-## Grading Criteria Alignment
-
-- **Algorithm Choice:** Explicitly XGBoost Regressor (no deep learning). Optuna is used over RandomizedSearchCV for faster, bayesian-informed hyperparameter exploration.
-- **Explainability:** SHAP summary plots for global impact, SHAP Waterfall plot in Streamlit for local prediction impact, and native feature importance charts.
-- **Robustness:** Handles missing target column detection, string cleanup for diverse LKR price formats. Errors gracefully caught in Streamlit app if model or mappings aren't found.
-
